@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Sentiment Dashboard - Upload Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  #dropzone.dragover { background-color: #eaf2fb; }
+</style>
+</head>
+<body class="bg-gray-100 font-sans p-10">
+
+<div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8">
+
+  <h1 class="text-2xl font-bold text-gray-800">📊 Customer Sentiment Analysis — Bulk Upload</h1>
+  <p class="text-gray-500 mt-1">Upload a CSV of customer reviews. It will be cleaned, scored by the model, and stored automatically.</p>
+  <a href="/dashboard" class="inline-flex mt-4 items-center rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700">Open dashboard</a>
+
+  <div id="dropzone" class="mt-5 border-2 border-dashed border-blue-400 rounded-lg p-10 text-center text-blue-500 cursor-pointer transition-colors">
+    <p>Drag & drop your CSV file here, or click to browse</p>
+    <input type="file" id="fileInput" accept=".csv" class="hidden">
+  </div>
+
+  <button id="uploadBtn" disabled
+    class="mt-4 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-200 disabled:cursor-not-allowed text-white font-medium px-5 py-2 rounded-md transition-colors">
+    Upload & Analyze
+  </button>
+
+  <div id="status" class="mt-4 text-sm text-gray-600"></div>
+
+  <div id="summary" class="hidden mt-6">
+    <div class="flex flex-wrap gap-3">
+      <div class="bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-center">
+        <div id="totalCount" class="text-2xl font-bold text-gray-800">0</div>
+        <div class="text-xs text-gray-500">Total Reviews</div>
+      </div>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-center">
+        <div id="posCount" class="text-2xl font-bold text-green-600">0</div>
+        <div class="text-xs text-gray-500">Positive</div>
+      </div>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-center">
+        <div id="negCount" class="text-2xl font-bold text-red-600">0</div>
+        <div class="text-xs text-gray-500">Negative</div>
+      </div>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-center">
+        <div id="neuCount" class="text-2xl font-bold text-gray-500">0</div>
+        <div class="text-xs text-gray-500">Neutral</div>
+      </div>
+    </div>
+
+    <table id="resultsTable" class="w-full mt-5 text-sm border-collapse">
+      <thead>
+        <tr class="bg-gray-50 text-left">
+          <th class="p-2 border-b border-gray-200">Review</th>
+          <th class="p-2 border-b border-gray-200">Sentiment</th>
+          <th class="p-2 border-b border-gray-200">Confidence</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="powerbiActions" class="mt-6 space-y-3">
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+      ✅ Your CSV upload is processed and saved to <b>sentiment_data.db</b>.
+      Power BI is not embedded in this app; connect Power BI to the database separately.
+    </div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <a id="viewStatsBtn" href="/dashboard" target="_blank" class="inline-flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+        View dashboard
+      </a>
+      <span class="text-sm text-gray-500">Use Power BI Desktop &gt; Get Data &gt; SQLite and point to <b>sentiment_data.db</b>, then refresh the report.</span>
+    </div>
+  </div>
+
+  <div id="pbiNote" class="mt-6 bg-yellow-50 text-yellow-800 text-sm rounded-md px-4 py-3">
+    ✅ Results are saved to <b>sentiment_data.db</b>. Refresh your Power BI dashboard
+    (Home → Refresh) to see updated charts, or view live stats at
+    <a href="/dashboard" target="_blank" class="underline font-medium">/dashboard</a>.
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='upload.js') }}"></script>
+</body>
+</html>

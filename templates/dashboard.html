@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Sentiment Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 p-10">
+  <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-md p-8">
+    <h1 class="text-3xl font-bold text-gray-900">Live Sentiment Dashboard</h1>
+    <p class="mt-2 text-gray-600">View your latest sentiment counts and download the SQLite file to open in Power BI Desktop.</p>
+
+    <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="rounded-xl border border-gray-200 p-5 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-700">Sentiment Distribution</h2>
+        <canvas id="sentimentChart" class="mt-5"></canvas>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-5 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-700">Review Volume</h2>
+        <canvas id="trendChart" class="mt-5"></canvas>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-5 bg-gray-50 lg:col-span-2">
+        <h2 class="text-lg font-semibold text-gray-700">Sentiment by Product</h2>
+        <canvas id="productChart" class="mt-5"></canvas>
+      </div>
+      <div class="rounded-xl border border-gray-200 p-5 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-700">Uploaded Reviews</h2>
+        <p class="text-3xl font-bold text-gray-900" id="totalReviews">0</p>
+        <p class="mt-2 text-sm text-gray-500">Total reviews stored in sentiment_data.db.</p>
+        <a href="/download-db" class="inline-flex mt-4 items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Download SQLite file</a>
+      </div>
+    </div>
+
+    <div class="mt-8 rounded-xl border border-gray-200 p-5 bg-white">
+      <h2 class="text-lg font-semibold text-gray-700">Power BI Desktop</h2>
+      <p class="mt-2 text-sm text-gray-500">Open the downloaded <code>sentiment_data.db</code> file in Power BI Desktop using <b>Get Data ▶ SQLite</b>.</p>
+      <p class="mt-2 text-sm text-gray-500">After upload, refresh the report in Power BI Desktop.</p>
+    </div>
+  </div>
+
+  <script>
+    async function loadStats() {
+      try {
+        const res = await fetch('/stats');
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Failed to load stats', data);
+          return;
+        }
+
+        document.getElementById('totalReviews').textContent = data.total_reviews;
+
+        const sentimentLabels = Object.keys(data.sentiment_distribution);
+        const sentimentValues = Object.values(data.sentiment_distribution);
+        const sentimentCtx = document.getElementById('sentimentChart');
+        new Chart(sentimentCtx, {
+          type: 'pie',
+          data: {
+            labels: sentimentLabels,
+            datasets: [{
+              data: sentimentValues,
+              backgroundColor: ['#10b981', '#ef4444', '#6b7280'],
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+
+        const trendLabels = data.daily_counts.map(row => row.date);
+        const trendValues = data.daily_counts.map(row => row.count);
+        const trendCtx = document.getElementById('trendChart');
+        new Chart(trendCtx, {
+          type: 'line',
+          data: {
+            labels: trendLabels,
+            datasets: [{
+              label: 'Reviews per day',
+              data: trendValues,
+              borderColor: '#2563eb',
+              backgroundColor: 'rgba(37, 99, 235, 0.2)',
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { title: { display: true, text: 'Date' } },
+              y: { title: { display: true, text: 'Reviews' }, beginAtZero: true }
+            }
+          }
+        });
+
+        const productNames = Object.keys(data.category_breakdown);
+        const sentimentCategories = Array.from(new Set(productNames.flatMap(name => Object.keys(data.category_breakdown[name]))));
+        const productCtx = document.getElementById('productChart');
+        const productDatasets = sentimentCategories.map((sentiment, index) => ({
+          label: sentiment,
+          data: productNames.map(name => data.category_breakdown[name][sentiment] || 0),
+          backgroundColor: ['#10b981', '#ef4444', '#6b7280', '#f59e0b'][index % 4]
+        }));
+        new Chart(productCtx, {
+          type: 'bar',
+          data: {
+            labels: productNames,
+            datasets: productDatasets
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { stacked: true },
+              y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Review count' } }
+            },
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error loading dashboard stats', err);
+      }
+    }
+    loadStats();
+  </script>
+</body>
+</html>
